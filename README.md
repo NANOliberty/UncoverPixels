@@ -18,7 +18,6 @@
   <img src="docs/store-3.jpg" width="150" />
   <img src="docs/store-4.jpg" width="150" />
   <img src="docs/store-5.jpg" width="150" />
-  <img src="docs/export-samples.jpg" width="150" />
 </p>
 
 > 전체 소스는 비공개 | 이 저장소에는 퍼즐 규칙·이미지 파이프라인·플레이 상태 관리 등 핵심 모듈 4개와 설계 설명만 공개 | 코드의 재배포 및 상업적 이용 불가
