@@ -4,7 +4,7 @@
 
 <h1 align="center">Uncover Pixels</h1>
 
-<p align="center">사진을 노노그램 퍼즐로 바꿔 풀고, 다 풀면 일기처럼 남기는 iOS 앱</p>
+<p align="center">사진을 노노그램 퍼즐로 바꿔 풀고, 일기로 남기는 iOS 앱</p>
 
 <p align="center">
   <a href="https://apps.apple.com/kr/app/uncoverpixels/id6769139305"><img src="https://img.shields.io/badge/App%20Store-Uncover%20Pixels-0D96F6?logo=apple&logoColor=white" alt="App Store" /></a>
@@ -18,12 +18,15 @@
   <img src="docs/store-3.jpg" width="150" />
   <img src="docs/store-4.jpg" width="150" />
   <img src="docs/store-5.jpg" width="150" />
+  <img src="docs/export-samples.jpg" width="150" />
 </p>
 
-> 전체 소스는 비공개. 이 저장소에는 퍼즐 규칙·이미지 파이프라인·플레이 상태 관리 등 핵심 모듈 4개와 설계 설명만 공개. 코드의 재배포 및 상업적 이용 불가.
-> 1인 개발(기획·디자인·개발·운영), 2026.04 ~ 운영 중. 개발에 Claude Code 적극 활용.
+> 전체 소스는 비공개 | 이 저장소에는 퍼즐 규칙·이미지 파이프라인·플레이 상태 관리 등 핵심 모듈 4개와 설계 설명만 공개 | 코드의 재배포 및 상업적 이용 불가
+> 1인 개발(기획·디자인·개발·운영) | 2026.04 ~ 운영 중 | 개발에 Claude Code 적극 활용
 
-## 무엇을 하는 앱인가
+<br>
+
+## 동작 흐름
 
 1. 사진 선택
 2. 120×120 픽셀로 축소 후 밝기 기준 흑백 노노그램 도안 생성
@@ -31,9 +34,9 @@
 4. 타일을 풀 때마다 그 부분의 원래 색이 드러나고, 전부 풀면 사진 완성
 5. 제목과 한 줄 일기를 붙여 다이어리에 저장, 날짜·제목 스탬프를 찍어 사진 앱으로 내보내기
 
-노노그램을 좋아하는 친구와 추억 기록을 좋아하는 내가 같이 쓰려고 만든 앱.
+<br>
 
-## 화면
+## 아이패드 화면
 
 <table>
 <tr>
@@ -43,23 +46,31 @@
 </tr>
 </table>
 
+<br>
+
+## 퍼즐 완성
+
 <table>
 <tr>
-<td width="340"><img src="docs/demo-cascade.gif" width="320" /></td>
-<td valign="top">
-<b>타일 완성 → 캐스케이드</b><br/><br/>
-마지막 칸을 채우면 대각선 순서(row+col)로 셀이 뒤집히며 흑백 도안이 원래 색으로 바뀜.
-목숨·진행률은 상단, 힌트는 우하단(리워드 광고 또는 광고 제거 구매 시 즉시).
+<td align="center" width="50%"><img src="docs/demo-cascade.gif" width="310" /></td>
+<td align="center" width="50%">
+  <img width="240" alt="IMG_4956" src="https://github.com/user-attachments/assets/9cb88c13-05c1-44a2-ba02-8b1de32cde55" /><br/>
+  <img width="240" alt="IMG_4955" src="https://github.com/user-attachments/assets/e4ff695d-5651-4648-afad-151a86337156" />
 </td>
 </tr>
 <tr>
-<td width="340"><img src="docs/export-samples.jpg" width="200" /></td>
 <td valign="top">
-<b>완성 후 내보내기</b><br/><br/>
-타일을 전부 풀면 원본 사진이 드러나고, 날짜와 한 줄 제목을 스탬프로 찍어 사진 앱에 저장.
+<b>타일 완성 → 캐스케이드</b><br/>
+마지막 칸을 채우면 대각선 순서(row+col)로 셀이 뒤집히며 흑백 도안이 원래 색으로 바뀜 | 목숨·진행률은 상단, 힌트는 우하단
+</td>
+<td valign="top">
+<b>완성 후 내보내기</b><br/>
+타일을 전부 풀면 원본 사진이 드러나고, 날짜와 한 줄 제목을 스탬프로 찍어 갤러리에 저장 가능
 </td>
 </tr>
 </table>
+
+<br>
 
 ## 기술 스택
 
@@ -71,6 +82,8 @@
 | 저장 | Firestore (PersistentCache로 오프라인 열람·로컬 우선 쓰기) |
 | 수익화 | AdMob 리워드 광고(힌트·이어하기), StoreKit 2 광고 제거 상품 |
 | 기타 | Crashlytics, PhotosUI, 햅틱 |
+
+<br>
 
 ## 이 저장소의 구성
 
@@ -94,6 +107,8 @@ UncoverYourPixels/
 ├── Resources/               에셋, 색상, Easy 공식 퍼즐 42개(4카테고리)
 └── Shared/                  폰트, 공통 컴포넌트
 ```
+
+<br>
 
 ## 핵심 로직
 
@@ -122,6 +137,8 @@ UncoverYourPixels/
 - 리워드 광고 로드에 7초 타임아웃. 로드·표시 실패 시 보상 그대로 지급(광고 때문에 게임이 막히지 않도록), 중복 지급은 플래그로 차단
 - 광고 제거 상품 구매 시 광고 없이 즉시 보상
 
+<br>
+
 ## 타임라인
 
 | 시기 | 내용 |
@@ -131,16 +148,21 @@ UncoverYourPixels/
 | 2026.05 | iPad 배경색·그리드 비율 수정, 갤러리 대표색 캐시, 리워드 광고·광고 제거 상품 |
 | 2026.09 | 오프라인 쓰기 멈춤, 게스트 로그인 실패 크래시, 드래그 목숨 연속 차감, 타일 진행 저장 — 네 건 수정 |
 
+<br>
+
 ## 빌드에 대해
 
-이 저장소만으로는 빌드 불가. 공개된 파일은 `UIKit`·`SwiftUI`·`CoreImage`만 사용하며, `PlayViewModel`이 참조하는 `AdService`(광고)와 `NonogramGridView`의 `Color(hex:)` 확장만 비공개 모듈에 있음. 전체 소스 열람이 필요하면 연락 바람.
+이 저장소만으로는 빌드 불가
+공개된 파일은 `UIKit`·`SwiftUI`·`CoreImage`만 사용하며, `PlayViewModel`이 참조하는 `AdService`(광고)와 `NonogramGridView`의 `Color(hex:)` 확장만 비공개 모듈에 있음 (전체 소스 열람이 필요하면 연락 바람)
 
-## 알고 있는 한계
+<br>
 
-- 단위 테스트 없음. 노노그램 규칙과 픽셀화는 순수 함수라 붙이기 쉬운 편
-- 광고 실패 시 보상 지급 정책은 비행기 모드로 힌트를 무한히 받을 수 있는 구조. 캐주얼 게임이라 감수
-- 다이어리 문서에 컬러 픽셀을 통째로 넣어 문서 크기가 큼. 이미지를 Storage에 두고 참조하는 쪽이 맞음
-- 출시 후에 git을 시작해 초기 개발 이력이 커밋으로 남아 있지 않음
+## 한계
+
+- 광고 실패 시 보상 지급 정책 수정 필요
+- 다이어리 문서에 컬러 픽셀을 통째로 넣어 문서 크기가 큼. 이미지를 Storage에 두고 참조하도록 수정 예정
+
+<br>
 
 ## 폰트
 
