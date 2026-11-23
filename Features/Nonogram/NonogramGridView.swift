@@ -26,7 +26,6 @@ struct NonogramGridView: View {
     @State private var dragStartCell: (Int, Int)? = nil
     @State private var lockedAxis: DragAxis? = nil
     @State private var pendingCells: Set<String> = []
-    @State private var dragFilling: Bool = true
     @State private var markDragging: Bool = true
     @State private var lastDragCell: (Int, Int) = (0, 0)
     @State private var dragLocation: CGPoint? = nil
@@ -69,6 +68,22 @@ struct NonogramGridView: View {
         }
     }
 
+    /// 지금 드래그로 실제로 바뀌는 칸 수. 찍는 드래그는 빈 칸만,
+    /// 지우는 드래그는 ✕ 칸만 센다
+    private var effectivePendingCount: Int {
+        pendingCells.reduce(into: 0) { acc, key in
+            let parts = key.split(separator: "_")
+            guard parts.count == 2, let r = Int(parts[0]), let c = Int(parts[1]),
+                  r < puzzle.size, c < puzzle.size else { return }
+            let state = puzzle.cells[r][c]
+            if isMarkingMode {
+                if markDragging ? state == .empty : state == .marked { acc += 1 }
+            } else if state == .empty {
+                acc += 1
+            }
+        }
+    }
+
     // MARK: - 그리드
     private func gridView(cell: CGFloat) -> some View {
         let pitch = cell + 1
@@ -82,6 +97,7 @@ struct NonogramGridView: View {
                             isRowComplete: puzzle.isRowComplete(row),
                             isColComplete: puzzle.isColComplete(col),
                             isPending: pendingCells.contains("\(row)_\(col)"),
+                            pendingErases: isMarkingMode && !markDragging,
                             isCursor: cursorVisible && row == cursorRow && col == cursorCol,
                             showXMark: showXMark,
                             cascadeStep: cascadeStep,
@@ -93,15 +109,15 @@ struct NonogramGridView: View {
             }
         }
         .background(DTheme.purpleLight.opacity(0.35))
-        .cornerRadius(8)
+        .cornerRadius(AppRadius.sm)
         .overlay(alignment: .topLeading) {
-            if showDragCount, let loc = dragLocation, pendingCells.count > 1 {
-                let count = pendingCells.count
+            if showDragCount, let loc = dragLocation, effectivePendingCount > 1 {
+                let count = effectivePendingCount
                 Text("\(count)")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, AppSpacing.md)
+                    .padding(.vertical, AppSpacing.sm)
                     .background(
                         Capsule()
                             .fill(isMarkingMode ? DTheme.marking : DTheme.purple)
@@ -124,7 +140,6 @@ struct NonogramGridView: View {
                         onDragStarted?()
                         dragStartCell = (row, col)
                         if isMarkingMode { markDragging = puzzle.cells[row][col] != .marked }
-                        else { dragFilling = puzzle.cells[row][col] == .empty }
                         pendingCells.insert("\(row)_\(col)")
                         return
                     }
@@ -247,6 +262,8 @@ struct CellView: View {
     let isRowComplete: Bool
     let isColComplete: Bool
     var isPending: Bool = false
+    /// 지금 드래그가 ✕를 지우는 방향인지
+    var pendingErases: Bool = false
     var isCursor: Bool = false
     var showXMark: Bool = true
     var cascadeStep: Int = -1
@@ -261,8 +278,7 @@ struct CellView: View {
             Rectangle()
                 .fill(backgroundColor)
                 .frame(width: max(1, size), height: max(1, size))
-                .overlay(isPending && state == .empty
-                    ? Rectangle().fill(DTheme.purpleLight.opacity(0.4)) : nil)
+                .overlay(pendingOverlay)
                 .overlay(isCursor
                     ? Rectangle().stroke(Color.white.opacity(0.85), lineWidth: 2) : nil)
                 .scaleEffect(cascadeScale)
@@ -273,6 +289,20 @@ struct CellView: View {
                 Text("✕")
                     .font(AppFont.custom(max(1, size) * 0.5))
                     .foregroundColor(DTheme.danger)
+                    .opacity(isPending && pendingErases ? 0.25 : 1)
+            }
+        }
+    }
+
+    /// 드래그로 실제로 바뀔 칸에만 미리보기를 그린다.
+    /// 찍는 드래그는 빈 칸을, 지우는 드래그는 ✕ 칸을 짚는다
+    @ViewBuilder
+    private var pendingOverlay: some View {
+        if isPending {
+            if pendingErases {
+                if state == .marked { Rectangle().fill(DTheme.purpleLight.opacity(0.25)) }
+            } else if state == .empty {
+                Rectangle().fill(DTheme.purpleLight.opacity(0.4))
             }
         }
     }
