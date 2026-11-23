@@ -33,7 +33,7 @@ struct PixelButton: View {
                 if isLoading {
                     ProgressView().tint(.white)
                 } else {
-                    HStack(spacing: 8) {
+                    HStack(spacing: AppSpacing.sm) {
                         if let icon {
                             Image(systemName: icon)
                                 .font(.system(size: fontSize * 0.7, weight: .semibold))
@@ -44,7 +44,7 @@ struct PixelButton: View {
             }
             .foregroundColor(labelColor)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, AppSpacing.lg)
             .background(background)
             .overlay(RoundedRectangle(cornerRadius: AppRadius.md).stroke(borderColor, lineWidth: 1.5))
             .cornerRadius(AppRadius.md)

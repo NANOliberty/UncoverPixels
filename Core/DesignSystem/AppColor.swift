@@ -113,13 +113,14 @@ enum DTheme {
 
 // MARK: - 내보내기 이미지용 (CoreGraphics는 UIColor를 받는다)
 
+// 그림은 메인 스레드 밖에서 그리므로 이 색들도 메인 액터에 묶이면 안 된다
 extension UIColor {
     /// 내보낸 이미지의 배경
-    static let exportBackground = UIColor(red: 0.05, green: 0.04, blue: 0.1, alpha: 1)
+    nonisolated static var exportBackground: UIColor { UIColor(red: 0.05, green: 0.04, blue: 0.1, alpha: 1) }
     /// 밝은 그림 위에 찍는 스탬프
-    static let exportStampOnLight = UIColor(red: 0.05, green: 0.05, blue: 0.35, alpha: 0.95)
+    nonisolated static var exportStampOnLight: UIColor { UIColor(red: 0.05, green: 0.05, blue: 0.35, alpha: 0.95) }
     /// 어두운 그림 위에 찍는 스탬프
-    static let exportStampOnDark = UIColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 0.95)
+    nonisolated static var exportStampOnDark: UIColor { UIColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 0.95) }
 }
 
 // MARK: - 16진수 색 표기
