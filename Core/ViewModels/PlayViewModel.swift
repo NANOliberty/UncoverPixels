@@ -32,21 +32,27 @@ class PlayViewModel: ObservableObject {
 
     private(set) var maxLives: Int
     let saveKey: String?
+    /// 진행 상황을 담아둘 곳. 테스트에서는 따로 만든 저장소를 넘긴다
+    private let store: UserDefaults
 
     // 클리어 연출 작업 — 리셋/화면 종료 시 취소해야 한다
     private var cascadeTask: Task<Void, Never>?
 
-    init(puzzle: NonogramPuzzle, lives: Int? = nil, saveKey: String? = nil) {
+    init(puzzle: NonogramPuzzle,
+         lives: Int? = nil,
+         saveKey: String? = nil,
+         store: UserDefaults = .standard) {
         let resolvedLives = lives ?? puzzle.lives
         self.maxLives = resolvedLives
         self.saveKey = saveKey
+        self.store = store
         _hintUsed = Published(initialValue:
-            saveKey.map { UserDefaults.standard.bool(forKey: "hint_used_\($0)") } ?? false
+            saveKey.map { store.bool(forKey: "hint_used_\($0)") } ?? false
         )
         var mutablePuzzle = puzzle
         mutablePuzzle.lives = resolvedLives
         if let key = saveKey,
-           let saved = UserDefaults.standard.array(forKey: "progress_\(key)") as? [Int],
+           let saved = store.array(forKey: "progress_\(key)") as? [Int],
            saved.count == puzzle.size * puzzle.size {
             for row in 0..<puzzle.size {
                 for col in 0..<puzzle.size {
@@ -59,7 +65,7 @@ class PlayViewModel: ObservableObject {
             }
             // 나간 시점의 목숨을 그대로 이어받는다. 저장하지 않으면 나갔다
             // 들어오는 것만으로 목숨이 채워져 광고 보상이 의미를 잃는다.
-            if let savedLives = UserDefaults.standard.object(forKey: "lives_\(key)") as? Int,
+            if let savedLives = store.object(forKey: "lives_\(key)") as? Int,
                savedLives > 0 {
                 mutablePuzzle.lives = min(savedLives, resolvedLives)
             }
@@ -174,7 +180,7 @@ class PlayViewModel: ObservableObject {
         let revealed = puzzle.revealRandomCells(count: 3)
         if !revealed.isEmpty { HapticManager.success() }
         hintUsed = true
-        if let key = saveKey { UserDefaults.standard.set(true, forKey: "hint_used_\(key)") }
+        if let key = saveKey { store.set(true, forKey: "hint_used_\(key)") }
         if puzzle.isSolved { clearSavedProgress(); startCascade() }
     }
 
@@ -189,16 +195,15 @@ class PlayViewModel: ObservableObject {
         let encoded = puzzle.cells.flatMap { $0 }.map { state -> Int in
             switch state { case .empty: return 0; case .filled: return 1; case .marked: return 2 }
         }
-        UserDefaults.standard.set(encoded, forKey: "progress_\(key)")
-        UserDefaults.standard.set(puzzle.lives, forKey: "lives_\(key)")
-        UserDefaults.standard.synchronize()
+        store.set(encoded, forKey: "progress_\(key)")
+        store.set(puzzle.lives, forKey: "lives_\(key)")
     }
 
     func clearSavedProgress() {
         guard let key = saveKey else { return }
-        UserDefaults.standard.removeObject(forKey: "progress_\(key)")
-        UserDefaults.standard.removeObject(forKey: "lives_\(key)")
-        UserDefaults.standard.removeObject(forKey: "hint_used_\(key)")
+        store.removeObject(forKey: "progress_\(key)")
+        store.removeObject(forKey: "lives_\(key)")
+        store.removeObject(forKey: "hint_used_\(key)")
     }
 
     func resetPuzzle() {
