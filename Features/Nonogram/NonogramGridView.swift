@@ -92,7 +92,7 @@ struct NonogramGridView: View {
                 }
             }
         }
-        .background(Color(hex: "#7F77DD").opacity(0.35))
+        .background(DTheme.purpleLight.opacity(0.35))
         .cornerRadius(8)
         .overlay(alignment: .topLeading) {
             if showDragCount, let loc = dragLocation, pendingCells.count > 1 {
@@ -104,8 +104,8 @@ struct NonogramGridView: View {
                     .padding(.vertical, 6)
                     .background(
                         Capsule()
-                            .fill(isMarkingMode ? Color(hex: "#C0445A") : Color(hex: "#534AB7"))
-                            .shadow(color: (isMarkingMode ? Color(hex: "#C0445A") : Color(hex: "#534AB7")).opacity(0.6), radius: 6, x: 0, y: 2)
+                            .fill(isMarkingMode ? DTheme.marking : DTheme.purple)
+                            .shadow(color: (isMarkingMode ? DTheme.marking : DTheme.purple).opacity(0.6), radius: 6, x: 0, y: 2)
                     )
                     .position(x: loc.x, y: max(loc.y - cell * 3.0, 20))
                     .transition(.scale(scale: 0.7).combined(with: .opacity))
@@ -198,7 +198,7 @@ struct NonogramGridView: View {
                 }
             }
             .frame(width: hintAreaWidth)
-            .background(Color(hex: "#0d0b1a").opacity(0.92))
+            .background(DTheme.hintBar.opacity(0.92))
         }
         .frame(width: hintAreaWidth)
         .padding(.trailing, 2)
@@ -219,7 +219,7 @@ struct NonogramGridView: View {
                 .frame(width: cell, height: hintAreaHeight)
             }
         }
-        .background(Color(hex: "#0d0b1a").opacity(0.92))
+        .background(DTheme.hintBar.opacity(0.92))
     }
 
     // MARK: - 힌트 숫자 공통 뷰
@@ -233,9 +233,9 @@ struct NonogramGridView: View {
         Text("\(hint)")
             .font(.system(size: isIPad ? 16 : 12, weight: .semibold, design: .monospaced))
             .foregroundColor(
-                lineComplete ? Color(hex: "#6B6499")
-                : satisfied  ? Color(hex: "#5EC48A")
-                :              Color(hex: "#AFA9EC")
+                lineComplete ? DTheme.hintDone
+                : satisfied  ? DTheme.hintOK
+                :              DTheme.purplePale
             )
     }
 }
@@ -262,7 +262,7 @@ struct CellView: View {
                 .fill(backgroundColor)
                 .frame(width: max(1, size), height: max(1, size))
                 .overlay(isPending && state == .empty
-                    ? Rectangle().fill(Color(hex: "#7F77DD").opacity(0.4)) : nil)
+                    ? Rectangle().fill(DTheme.purpleLight.opacity(0.4)) : nil)
                 .overlay(isCursor
                     ? Rectangle().stroke(Color.white.opacity(0.85), lineWidth: 2) : nil)
                 .scaleEffect(cascadeScale)
@@ -271,8 +271,8 @@ struct CellView: View {
 
             if state == .marked && showXMark {
                 Text("✕")
-                    .font(.custom("NeoDunggeunmoPro-Regular", size: max(1, size) * 0.5))
-                    .foregroundColor(Color(hex: "#E05C7A"))
+                    .font(AppFont.custom(max(1, size) * 0.5))
+                    .foregroundColor(DTheme.danger)
             }
         }
     }
@@ -286,15 +286,15 @@ struct CellView: View {
         let isComplete = isRowComplete || isColComplete
         switch state {
         case .filled:
-            if cascadeStep >= 0 && !isRevealed { return Color(hex: "#26215C") }
+            if cascadeStep >= 0 && !isRevealed { return DTheme.purpleDeep }
             if cascadeStep >= 0, let color = pixelColor, color != .clear { return color }
-            return Color(hex: "#534AB7")
+            return DTheme.purple
         case .marked:
-            return showXMark ? Color(hex: "#1a1530") : Color(hex: "#1e1c3a")
+            return showXMark ? DTheme.bg2 : DTheme.cellEmpty
         case .empty:
-            if isCursor { return Color(hex: "#AFA9EC").opacity(0.26) }
-            if isComplete { return Color(hex: "#1A4040").opacity(0.8) }
-            return Color(hex: "#13112a")
+            if isCursor { return DTheme.purplePale.opacity(0.26) }
+            if isComplete { return DTheme.cellInLine.opacity(0.8) }
+            return DTheme.surface
         }
     }
 }

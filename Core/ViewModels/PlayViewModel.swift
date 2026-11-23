@@ -33,6 +33,9 @@ class PlayViewModel: ObservableObject {
     private(set) var maxLives: Int
     let saveKey: String?
 
+    // 클리어 연출 작업 — 리셋/화면 종료 시 취소해야 한다
+    private var cascadeTask: Task<Void, Never>?
+
     init(puzzle: NonogramPuzzle, lives: Int? = nil, saveKey: String? = nil) {
         let resolvedLives = lives ?? puzzle.lives
         self.maxLives = resolvedLives
@@ -54,8 +57,23 @@ class PlayViewModel: ObservableObject {
                     }
                 }
             }
+            // 나간 시점의 목숨을 그대로 이어받는다. 저장하지 않으면 나갔다
+            // 들어오는 것만으로 목숨이 채워져 광고 보상이 의미를 잃는다.
+            if let savedLives = UserDefaults.standard.object(forKey: "lives_\(key)") as? Int,
+               savedLives > 0 {
+                mutablePuzzle.lives = min(savedLives, resolvedLives)
+            }
         }
         self.puzzle = mutablePuzzle
+
+        // 퍼즐을 푸는 동안에는 배경음악이 물러난다.
+        // 화면의 onAppear/onDisappear에 걸면 광고가 뜰 때도 퇴장으로 잡혀
+        // 음악이 다시 올라온다.
+        Task { @MainActor in BGMPlayer.shared.suspend(.puzzle) }
+    }
+
+    deinit {
+        Task { @MainActor in BGMPlayer.shared.resume(.puzzle) }
     }
 
     /// 저장된 진행 상황을 복원했을 때 이미 완성된 상태면 완성 처리
@@ -121,6 +139,8 @@ class PlayViewModel: ObservableObject {
 
     // MARK: - 힌트
     func useHint() {
+        // 클리어 직후 연출 중에는 힌트가 효과 없이 소모된다
+        guard !puzzle.isSolved else { return }
         if hintUsed {
             // 무료 힌트 소진 → 광고 보고 추가 힌트
             isAdLoading = true
@@ -170,16 +190,19 @@ class PlayViewModel: ObservableObject {
             switch state { case .empty: return 0; case .filled: return 1; case .marked: return 2 }
         }
         UserDefaults.standard.set(encoded, forKey: "progress_\(key)")
+        UserDefaults.standard.set(puzzle.lives, forKey: "lives_\(key)")
         UserDefaults.standard.synchronize()
     }
 
     func clearSavedProgress() {
         guard let key = saveKey else { return }
         UserDefaults.standard.removeObject(forKey: "progress_\(key)")
+        UserDefaults.standard.removeObject(forKey: "lives_\(key)")
         UserDefaults.standard.removeObject(forKey: "hint_used_\(key)")
     }
 
     func resetPuzzle() {
+        cancelCascade()
         for row in 0..<puzzle.size {
             for col in 0..<puzzle.size { puzzle.cells[row][col] = .empty }
         }
@@ -213,15 +236,23 @@ class PlayViewModel: ObservableObject {
     }
 
     private func startCascade() {
+        cascadeTask?.cancel()
         let maxStep = (puzzle.size - 1) * 2
-        for step in 0...maxStep {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(step) * 0.06) {
+        cascadeTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for step in 0...maxStep {
                 withAnimation(.none) { self.cascadeStep = step }
+                do { try await Task.sleep(nanoseconds: 60_000_000) } catch { return }
             }
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double(maxStep) * 0.06 + 0.4) {
+            do { try await Task.sleep(nanoseconds: 400_000_000) } catch { return }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) { self.showSolvedAnimation = true }
         }
+    }
+
+    // 화면을 벗어날 때 예약된 연출을 정리한다
+    func cancelCascade() {
+        cascadeTask?.cancel()
+        cascadeTask = nil
     }
 
     // MARK: - 실패 후 광고 보고 계속하기
@@ -239,6 +270,7 @@ class PlayViewModel: ObservableObject {
                 if !self.continueRewardClaimed {
                     self.continueRewardClaimed = true
                     self.puzzle.restoreLives(to: self.maxLives)
+                    self.saveProgress()
                     self.showFailAlert = false
                 }
             }
@@ -248,6 +280,7 @@ class PlayViewModel: ObservableObject {
             guard let self, !self.continueRewardClaimed else { return }
             self.continueRewardClaimed = true
             self.puzzle.restoreLives(to: self.maxLives)
+            self.saveProgress()
             self.showFailAlert = false
         } onDismissed: { [weak self] in
             timeoutTask.cancel()
